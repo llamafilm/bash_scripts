@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# This script receives one ALE and outputs individual CDL files for each clip.
+# This script receives one ALE and outputs individual CDL files for each clip to the same directory.
+# Tested with Resolve 12.  Export timeline as "ALE and CDL"
 # Files will be named to match original clip names, and Tape_Scene_Take will be in the Description tag.
 set -e	# rudimentary error handling
 naming=0	# default to clip naming
