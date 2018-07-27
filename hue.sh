@@ -1,6 +1,6 @@
 #!/bin/bash
 
-command="curl -s -H \"Content-Type: application/json\" http://192.168.3.120/api/O-Rr9AYwxZP8lJHJS-cyDJcuqfyPNVpY8ppZOc1p"
+command="curl -s -H \"Content-Type: application/json\" http://hostname/api/key"
 function show_usage {
   echo $"Usage: $0 {off | prealarm | day | evening | bedtime}"
   echo $"       $0 { on ct bri }"
