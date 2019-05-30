@@ -17,7 +17,6 @@ isConnected() {
   return 1
 }
 
-
 while true; do
   if isConnected; then
     conn=1
