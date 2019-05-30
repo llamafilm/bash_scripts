@@ -4,9 +4,17 @@
 
 timeout=300
 logfile="/var/log/suicide.txt"
+region="us-west-1"
+topic_arn="xxxxxx"
+
 echo "Starting up with timeout set to $timeout"
 date >> $logfile
 conn=1
+
+myID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id/)
+myName=$(aws --region us-west-1 ec2 describe-tags --filter "Name=resource-id,Values=$myID" --query 'Tags[?Key==`Name`].Value' --output text)
+message="Shutting down instance $myID ($myName) due to $timeout seconds of SSH inactivity"
+if [ ! $(which aws) ]; then echo "Error: could not find aws cli"; fi
 
 isConnected() {
   while read line; do
@@ -22,12 +30,9 @@ while true; do
     conn=1
   else
     if [ $conn == 0 ]; then
-      echo "shutting down now" >> $logfile
-      myID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id/)
-      myName=$(aws --region us-west-1 ec2 describe-tags --filter "Name=resource-id,Values=$myID" --query 'Tags[?Key==`Name`].Value' --output text)
-      message="Shutting down instance $myID ($myName) due to $timeout seconds of SSH inactivity"
-      aws sns publish --region us-west-1 --topic-arn "xxxxxx" --subject "EC2 Instance Suicide" --message "$message"
-#      shutdown now
+      echo "$message" >> $logfile
+      aws sns publish --region "$region" --topic-arn "$topic_arn" --subject "EC2 Instance Suicide ($myName)" --message "$message"
+      shutdown now
     fi
     conn=0
   fi
