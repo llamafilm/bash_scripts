@@ -1,6 +1,6 @@
 [Unit]
 Description=DaVinci Resolve Remote Rendering
-After=vncserver@:0.service
+After=vncserver@:0.service resolvefg.service
 Conflicts=resolvefg.service
 
 [Service]
