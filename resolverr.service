@@ -1,14 +1,17 @@
 [Unit]
 Description=DaVinci Resolve Remote Rendering
 After=vncserver@:0.service
+Conflicts=resolvefg.service
 
 [Service]
 Environment="DISPLAY=:0"
 ExecStart=/opt/resolve/bin/resolve -rr
 StandardOutput=null
 StandardError=null
-Type=exec
+Type=simple
+ExecStop=/bin/kill $MAINPID
 KillMode=mixed
+TimeoutStopSec=10
 User=resolve
 
 [Install]
