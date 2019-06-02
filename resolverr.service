@@ -1,0 +1,15 @@
+[Unit]
+Description=DaVinci Resolve Remote Rendering
+After=vncserver@:0.service
+
+[Service]
+Environment="DISPLAY=:0"
+ExecStart=/opt/resolve/bin/resolve -rr
+StandardOutput=null
+StandardError=null
+Type=exec
+KillMode=mixed
+User=resolve
+
+[Install]
+WantedBy=multi-user.target
