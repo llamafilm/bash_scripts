@@ -1,11 +1,13 @@
 #!/bin/bash
-# This script will shutdown the computer if there is no active SSH connection after a time period
+# This systemd service will shutdown the computer if there is no active SSH connection after a time period
 # We will also publish SNS message to the EC2-alerts topic
+# dependencies: jq, curl, awscli accessible to root user
+# requires AWS permission to publish SNS
 
 timeout=300
 logfile="/var/log/suicide.txt"
-region="us-west-1"
-topic_arn="xxxxxx"
+topic_arn="changeme"
+region=$(curl -sN http://169.254.169.254/latest/dynamic/instance-identity/document | jq '.region' -r 2>&1) || { region="us-west-1"; echo "jq not found.  Defaulting to us-west-1."; }
 
 echo "Starting up with timeout set to $timeout"
 date >> $logfile
@@ -14,7 +16,7 @@ conn=1
 myID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id/)
 myName=$(aws --region us-west-1 ec2 describe-tags --filter "Name=resource-id,Values=$myID" --query 'Tags[?Key==`Name`].Value' --output text)
 message="Shutting down instance $myID ($myName) due to $timeout seconds of SSH inactivity"
-if [ ! $(which aws) ]; then echo "Error: could not find aws cli"; fi
+command -v aws >/dev/null || echo "Error: could not find aws cli"
 
 isConnected() {
   while read line; do
