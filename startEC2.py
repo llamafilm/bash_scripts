@@ -7,8 +7,9 @@ import os
 import socket
 from contextlib import closing
 
+
 session = boto3.Session(profile_name='work')
-ec2 = session.client('ec2')
+ec2 = session.resource('ec2')
 
 def check_socket(host, port):
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
@@ -17,61 +18,57 @@ def check_socket(host, port):
         else:
             return False
 
-def startInstance(instanceID):
-  response = ec2.describe_instances(InstanceIds=[instanceID])['Reservations'][0]['Instances'][0]
+def startInstance(i):
+  # get Name tag
+  for tag in i.tags:
+    if tag['Key'] == 'Name':
+      instanceName = tag['Value']
+  print('Starting instance ' + i.instance_id + ' (' + instanceName + ') ...')
 
-  for tags in response['Tags']:
-    if tags['Key'] == 'Name':
-      instanceName = tags['Value']
-  print('Starting instance ' + instanceID + ' (' + instanceName + ') ...')
-
-  state = response['State']['Name']
-  if state == "running":
+  state = i.state['Name']
+  if state == 'running':
     print('Instance is already running')
-    response = ec2.describe_instances(InstanceIds=[instanceID])['Reservations'][0]['Instances'][0]
-    return response['PublicIpAddress']
+    return i.public_ip_address
   elif state in ['pending', 'shutting-down', 'stopping']:
-    print('Instance is currenting ' + state + '. Please try again later.')
+    print('Instance is currently ' + state + '. Please try again later.')
     sys.exit()  
   else:
-    response = ec2.start_instances(InstanceIds=[instanceID])['StartingInstances']
-    if response[0]['CurrentState']['Name'] != 'pending':
+    i.start()
+    if i.state['Name'] != 'pending':
       print('Error! Could not start instance')
       sys.exit()
     else:
-      while True:
-        response = ec2.describe_instances(InstanceIds=[instanceID])['Reservations'][0]['Instances'][0]
-        if response['State']['Code'] == 16:
-          return response['PublicIpAddress']
-        time.sleep(1)
+      time.sleep(10)
+      i.wait_until_running(WaiterConfig = {'Delay': 2})
+      i.reload()
+      return i.public_ip_address
 
 print('Which instance would you like to start?')
 
 # print table describing instances
-response = ec2.describe_instances()['Reservations']
-for counter, i in enumerate(response):
-  for tags in i['Instances'][0]['Tags']:
-    if tags['Key'] == 'Name':
-      instanceName = tags['Value']
-  print('(' + str(counter) + ')', i['Instances'][0]['InstanceId'] + '\t' + 
-    i['Instances'][0]['InstanceType'] + '\t' + i['Instances'][0]['State']['Name'] + '\t\t' + instanceName)
-
+list = []
+for counter, object in enumerate(ec2.instances.all()):
+  list.append(object)
+  for tag in object.tags:
+    if tag['Key'] == 'Name':
+      instanceName = tag['Value']
+  print('(' + str(counter) + ')', object.instance_id + '\t' + object.instance_type + '\t' + 
+    object.state['Name'] + '\t\t' + instanceName)
 # get user input
 print()
 choice = int(input())
 
-publicIP = startInstance(response[choice]['Instances'][0]['InstanceId'])
+publicIP = startInstance(list[choice])
 print('Public IP: ' + publicIP)
 
 # login with SSH using correct username
 user = 'centos'
-for tags in response[choice]['Instances'][0]['Tags']:
-  print(tags)
-  if tags['Key'] == 'SSH user':
-    user = tags['Value']
+for tag in list[choice].tags:
+  if tag['Key'] == 'SSH user':
+    user = tag['Value']
     break
 command = 'ssh ' + user + '@' + publicIP
-print('Logging in after ping is up... ', command)
+print('Logging in after server is up... ', command)
 
 # wait for open port
 while not check_socket(publicIP,22):
