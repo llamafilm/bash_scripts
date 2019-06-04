@@ -7,9 +7,7 @@ import os
 import socket
 from contextlib import closing
 
-
 session = boto3.Session(profile_name='work')
-ec2 = session.resource('ec2')
 
 def check_socket(host, port):
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
@@ -45,18 +43,32 @@ def startInstance():
 
 print('Which instance would you like to start?')
 
-# print table describing instances
-list = []
-for counter, object in enumerate(ec2.instances.all()):
-  list.append(object)
-  for tag in object.tags:
-    if tag['Key'] == 'Name':
-      instanceName = tag['Value']
-  print('(' + str(counter) + ')', object.instance_id + '\t' + object.instance_type + '\t' + 
-    object.state['Name'] + '\t\t' + instanceName)
+# get list of all regions.  All regions takes too long, so we choose a few
+"""
+allRegions = []
+ec2client = boto3.client('ec2')
+response = ec2client.describe_regions()
+for r in response['Regions']:
+  allRegions.append(r['RegionName'])
+"""
+allRegions = ['us-west-1', 'us-east-1', 'us-west-2']
+allInstances = []
+print('Showing instances from regions: ', ' '.join(allRegions))
+
+# iterate through region list
+for r in allRegions:
+  ec2 = boto3.resource('ec2', r)
+  # print table describing instances
+  for counter, object in enumerate(ec2.instances.all()):
+    allInstances.append(object)
+    for tag in object.tags:
+      if tag['Key'] == 'Name':
+        instanceName = tag['Value']
+    print('(' + str(len(allInstances)) + ')', r, object.instance_id, '\t', object.instance_type, '\t', 
+      object.state['Name'], '\t', instanceName)
 print()
 # get user input
-i = list[ int(input()) ]
+i = allInstances[ int(input()) - 1 ]
 startInstance()
 print('Public IP: ' + i.public_ip_address)
 
