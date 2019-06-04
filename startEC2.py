@@ -5,7 +5,6 @@ import os
 import socket
 from contextlib import closing
 
-
 session = boto3.Session(profile_name='work')
 ec2 = session.client('ec2')
 
