@@ -37,3 +37,13 @@ Set foreground red bold and background black: `export PS1="\[\e[1;38;5;160m\]\[\
 The 1 before semicolon means bold  
 160m is red, 16m is black  
 Enclosing each command in escaped square brackets is necessary so the newline doesn't overflow
+
+
+##### Use dtruss on Catalina
+First disable SIP for dtruss (don't have to disable completely).  From recovery mode:
+```
+csrutil disable
+csrutil enable --without dtrace
+```
+Now copy the binary somewhere and remove signature:
+`codesign --remove-signature ~/ifconfig`
