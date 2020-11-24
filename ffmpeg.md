@@ -1,5 +1,6 @@
 #### Encode HDR HEVC for Apple devices
 Color primaries are in units of 0.00002 while display luminance is in units of 0.0001.  I wish I knew why.  ST 2067-21 mentions this.
+hvc1 is required for Apple devices
 
 ```
 ffmpeg -hide_banner -i J001C031_140110_R6MS.mov -c:v libx265 -preset fast -crf 15 -tag:v hvc1 -pix_fmt yuv420p10le \
@@ -12,5 +13,31 @@ ffmpeg -hide_banner -i J001C031_140110_R6MS.mov -c:v libx265 -preset fast -crf 1
 ffmpeg  -i video.mov -i audio_8ch.wav -c:v copy -c:a pcm_s24le -map 0:v -map 1:a -map 1:a \
   -map_channel 1.0.0:0.1 -map_channel 1.0.1:0.1 \
   -map_channel 1.0.2:0.2 -map_channel 1.0.3:0.2 -map_channel 1.0.4:0.2 -map_channel 1.0.5:0.2 \
-  -map_channel 1.0.6:0.2 -map_channel 1.0.7:0.2 youtube_output.mov
+  -map_channel 1.0.6:0.2 -map_channel 1.0.7:0.2 -b:a:0 192k -b:a:1 384k youtube_output.mov
+```
+
+#### Change HEVC tag
+```
+ffmpeg -i input.mov -c:v copy -c:a copy -tag:v hev1 output.mp4
+```
+
+#### Write PNG image sequence
+```
+ffmpeg -i video.mov -c:v png output/output%03d.png -nostats
+```
+
+#### Capture multiple streams from Decklink Quad, lossless encode with Nvidia GPU
+- Install Decklink driver
+- Name inputs in Desktop Video Setup
+- Copy Decklink SDK headers to `/usr/local/include`
+- Compile with `--prefix=/usr/local --enable-decklink --enable-nvenc --enable-nonfree`
+- Name the inputs using Desktop Video Setup
+```
+ffmpeg -loglevel warning -stats -f decklink -i "DeckLink-Capture-($num)" -format_code Hp59 \
+  -pix_fmt yuv444p16le -an -c:v hevc_nvenc -preset losslesshp -gpu 0 -y "decklink$num.mp4"
+```
+
+#### Verify frame count metadata
+```
+ffprobe -select_streams v:0 -show_entries stream=nb_frames FilmicPro.mov -v error
 ```
