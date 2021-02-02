@@ -41,3 +41,12 @@ ffmpeg -loglevel warning -stats -f decklink -i "DeckLink-Capture-($num)" -format
 ```
 ffprobe -select_streams v:0 -show_entries stream=nb_frames FilmicPro.mov -v error
 ```
+
+#### Merge multi-mono audio tracks into 5.1 + stereo
+a and b are arbitrary labels here
+```
+ffmpeg -y -hide_banner -i 12tracks.mov \
+-filter_complex "[0:1][0:2][0:3][0:4][0:5][0:6] amerge=inputs=6[a]" \
+-filter_complex "[0:7][0:8] amerge=inputs=2[b]" \
+-map 0:v -map "[a]" -map "[b]" -c:a pcm_s16le -c:v copy output.mov
+```
