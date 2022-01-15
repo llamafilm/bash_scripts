@@ -50,3 +50,82 @@ ffmpeg -y -hide_banner -i 12tracks.mov \
 -filter_complex "[0:7][0:8] amerge=inputs=2[b]" \
 -map 0:v -map "[a]" -map "[b]" -c:a pcm_s16le -c:v copy output.mov
 ```
+
+#### Display volume meters from Dolby CP950A AES67 stream
+Using `gstreamer` to receive 8 separate streams of 8 channels each and pipe 64 channels to ffmpeg.  Tested on macOS.
+```
+ 
+gst-launch-1.0 -q interleave name=i ! audioconvert ! wavenc ! fdsink \
+  udpsrc address=239.69.83.67 port=6518 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d1 \
+    d1.src_0 ! queue ! audioconvert ! i.sink_0 \
+    d1.src_1 ! queue ! audioconvert ! i.sink_1 \
+    d1.src_2 ! queue ! audioconvert ! i.sink_2 \
+    d1.src_3 ! queue ! audioconvert ! i.sink_3 \
+    d1.src_4 ! queue ! audioconvert ! i.sink_4 \
+    d1.src_5 ! queue ! audioconvert ! i.sink_5 \
+    d1.src_6 ! queue ! audioconvert ! i.sink_6 \
+    d1.src_7 ! queue ! audioconvert ! i.sink_7 \
+  udpsrc address=239.69.83.67 port=6520 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d2 \
+    d2.src_0 ! queue ! audioconvert ! i.sink_8 \
+    d2.src_1 ! queue ! audioconvert ! i.sink_9 \
+    d2.src_2 ! queue ! audioconvert ! i.sink_10 \
+    d2.src_3 ! queue ! audioconvert ! i.sink_11 \
+    d2.src_4 ! queue ! audioconvert ! i.sink_12 \
+    d2.src_5 ! queue ! audioconvert ! i.sink_13 \
+    d2.src_6 ! queue ! audioconvert ! i.sink_14 \
+    d2.src_7 ! queue ! audioconvert ! i.sink_15 \
+  udpsrc address=239.69.83.67 port=6522 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d3 \
+    d3.src_0 ! queue ! audioconvert ! i.sink_16 \
+    d3.src_1 ! queue ! audioconvert ! i.sink_17 \
+    d3.src_2 ! queue ! audioconvert ! i.sink_18 \
+    d3.src_3 ! queue ! audioconvert ! i.sink_19 \
+    d3.src_4 ! queue ! audioconvert ! i.sink_20 \
+    d3.src_5 ! queue ! audioconvert ! i.sink_21 \
+    d3.src_6 ! queue ! audioconvert ! i.sink_22 \
+    d3.src_7 ! queue ! audioconvert ! i.sink_23 \
+  udpsrc address=239.69.83.67 port=6524 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d4 \
+    d4.src_0 ! queue ! audioconvert ! i.sink_24 \
+    d4.src_1 ! queue ! audioconvert ! i.sink_25 \
+    d4.src_2 ! queue ! audioconvert ! i.sink_26 \
+    d4.src_3 ! queue ! audioconvert ! i.sink_27 \
+    d4.src_4 ! queue ! audioconvert ! i.sink_28 \
+    d4.src_5 ! queue ! audioconvert ! i.sink_29 \
+    d4.src_6 ! queue ! audioconvert ! i.sink_30 \
+    d4.src_7 ! queue ! audioconvert ! i.sink_31 \
+  udpsrc address=239.69.83.67 port=6526 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d5 \
+    d5.src_0 ! queue ! audioconvert ! i.sink_32 \
+    d5.src_1 ! queue ! audioconvert ! i.sink_33 \
+    d5.src_2 ! queue ! audioconvert ! i.sink_34 \
+    d5.src_3 ! queue ! audioconvert ! i.sink_35 \
+    d5.src_4 ! queue ! audioconvert ! i.sink_36 \
+    d5.src_5 ! queue ! audioconvert ! i.sink_37 \
+    d5.src_6 ! queue ! audioconvert ! i.sink_38 \
+    d5.src_7 ! queue ! audioconvert ! i.sink_39 \
+  udpsrc address=239.69.83.67 port=6528 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d6 \
+    d6.src_0 ! queue ! audioconvert ! i.sink_40 \
+    d6.src_1 ! queue ! audioconvert ! i.sink_41 \
+    d6.src_2 ! queue ! audioconvert ! i.sink_42 \
+    d6.src_3 ! queue ! audioconvert ! i.sink_43 \
+    d6.src_4 ! queue ! audioconvert ! i.sink_44 \
+    d6.src_5 ! queue ! audioconvert ! i.sink_45 \
+    d6.src_6 ! queue ! audioconvert ! i.sink_46 \
+    d6.src_7 ! queue ! audioconvert ! i.sink_47 \
+  udpsrc address=239.69.83.67 port=6530 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d7 \
+    d7.src_0 ! queue ! audioconvert ! i.sink_48 \
+    d7.src_1 ! queue ! audioconvert ! i.sink_49 \
+    d7.src_2 ! queue ! audioconvert ! i.sink_50 \
+    d7.src_3 ! queue ! audioconvert ! i.sink_51 \
+    d7.src_4 ! queue ! audioconvert ! i.sink_52 \
+    d7.src_5 ! queue ! audioconvert ! i.sink_53 \
+    d7.src_6 ! queue ! audioconvert ! i.sink_54 \
+    d7.src_7 ! queue ! audioconvert ! i.sink_55 \
+  udpsrc address=239.69.83.67 port=6532 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d8 \
+    d8.src_0 ! queue ! audioconvert ! i.sink_56 \
+    d8.src_1 ! queue ! audioconvert ! i.sink_57 \
+    d8.src_2 ! queue ! audioconvert ! i.sink_58 \
+    d8.src_3 ! queue ! audioconvert ! i.sink_59 \
+    d8.src_4 ! queue ! audioconvert ! i.sink_60 \
+    d8.src_5 ! queue ! audioconvert ! i.sink_61 \
+    d8.src_6 ! queue ! audioconvert ! i.sink_62 \
+  |	ffmpeg -hide_banner -loglevel info -i - -filter_complex showvolume=t=0:dm=3 -f sdl -
+```
