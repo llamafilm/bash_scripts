@@ -52,9 +52,38 @@ ffmpeg -y -hide_banner -i 12tracks.mov \
 ```
 
 #### Display volume meters from Dolby CP950A AES67 stream
-Using `gstreamer` to receive 8 separate streams of 8 channels each and pipe 64 channels to ffmpeg.  Tested on macOS.
+From an SDP file like this called `dolby1.sdp`:
 ```
- 
+v=0
+o=- 0 0 IN IP4 10.49.51.51
+s=CP950A_a
+c=IN IP4 239.69.83.67/32
+t=0 0
+a=clock-domain:PTPv2 0
+m=audio 6518 RTP/AVP 96
+a=rtpmap:96 L24/48000/8
+a=ts-refclk:ptp=IEEE1588-2008:00-60-DB-FF-FE-01-02-C8:0
+a=mediaclk:direct=0
+a=framecount:48
+a=sync-time:0
+```
+
+```
+ffmpeg -protocol_whitelist file,rtp,udp -i dolby1.sdp -filter_complex "showvolume=t=0:dm=1:ds=log" -f sdl -
+```
+
+To combine 4 separate streams:
+
+```
+ffmpeg -re -hide_banner -loglevel info -protocol_whitelist file,rtp,udp -i dolby1.sdp \
+  -protocol_whitelist file,rtp,udp -i dolby2.sdp \
+  -protocol_whitelist file,rtp,udp -i dolby3.sdp \
+  -protocol_whitelist file,rtp,udp -i dolby4.sdp \
+  -filter_complex "[0][1][2][3] amerge=inputs=4, showvolume=t=0:dm=1:ds=log" -f sdl -
+```
+
+Or you can use gstreamer to receive streams and pipe to ffmpeg
+``` 
 gst-launch-1.0 -q interleave name=i ! audioconvert ! wavenc ! fdsink \
   udpsrc address=239.69.83.67 port=6518 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d1 \
     d1.src_0 ! queue ! audioconvert ! i.sink_0 \
@@ -92,40 +121,5 @@ gst-launch-1.0 -q interleave name=i ! audioconvert ! wavenc ! fdsink \
     d4.src_5 ! queue ! audioconvert ! i.sink_29 \
     d4.src_6 ! queue ! audioconvert ! i.sink_30 \
     d4.src_7 ! queue ! audioconvert ! i.sink_31 \
-  udpsrc address=239.69.83.67 port=6526 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d5 \
-    d5.src_0 ! queue ! audioconvert ! i.sink_32 \
-    d5.src_1 ! queue ! audioconvert ! i.sink_33 \
-    d5.src_2 ! queue ! audioconvert ! i.sink_34 \
-    d5.src_3 ! queue ! audioconvert ! i.sink_35 \
-    d5.src_4 ! queue ! audioconvert ! i.sink_36 \
-    d5.src_5 ! queue ! audioconvert ! i.sink_37 \
-    d5.src_6 ! queue ! audioconvert ! i.sink_38 \
-    d5.src_7 ! queue ! audioconvert ! i.sink_39 \
-  udpsrc address=239.69.83.67 port=6528 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d6 \
-    d6.src_0 ! queue ! audioconvert ! i.sink_40 \
-    d6.src_1 ! queue ! audioconvert ! i.sink_41 \
-    d6.src_2 ! queue ! audioconvert ! i.sink_42 \
-    d6.src_3 ! queue ! audioconvert ! i.sink_43 \
-    d6.src_4 ! queue ! audioconvert ! i.sink_44 \
-    d6.src_5 ! queue ! audioconvert ! i.sink_45 \
-    d6.src_6 ! queue ! audioconvert ! i.sink_46 \
-    d6.src_7 ! queue ! audioconvert ! i.sink_47 \
-  udpsrc address=239.69.83.67 port=6530 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d7 \
-    d7.src_0 ! queue ! audioconvert ! i.sink_48 \
-    d7.src_1 ! queue ! audioconvert ! i.sink_49 \
-    d7.src_2 ! queue ! audioconvert ! i.sink_50 \
-    d7.src_3 ! queue ! audioconvert ! i.sink_51 \
-    d7.src_4 ! queue ! audioconvert ! i.sink_52 \
-    d7.src_5 ! queue ! audioconvert ! i.sink_53 \
-    d7.src_6 ! queue ! audioconvert ! i.sink_54 \
-    d7.src_7 ! queue ! audioconvert ! i.sink_55 \
-  udpsrc address=239.69.83.67 port=6532 ! application/x-rtp, clock-rate=48000, channels=8 ! rtpjitterbuffer ! rtpL24depay ! audioconvert ! deinterleave name=d8 \
-    d8.src_0 ! queue ! audioconvert ! i.sink_56 \
-    d8.src_1 ! queue ! audioconvert ! i.sink_57 \
-    d8.src_2 ! queue ! audioconvert ! i.sink_58 \
-    d8.src_3 ! queue ! audioconvert ! i.sink_59 \
-    d8.src_4 ! queue ! audioconvert ! i.sink_60 \
-    d8.src_5 ! queue ! audioconvert ! i.sink_61 \
-    d8.src_6 ! queue ! audioconvert ! i.sink_62 \
-  |	ffmpeg -hide_banner -loglevel info -i - -filter_complex showvolume=t=0:dm=3 -f sdl -
+| ffmpeg -hide_banner -loglevel info -i - -filter_complex showvolume=t=0:dm=3 -f sdl -
 ```
